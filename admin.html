@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura & Ash | Atelier Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #e5e5e5; display: flex; min-height: 100vh; overflow-x: hidden; }
+        aside { width: 260px; background-color: #0a0a0a; border-right: 1px solid rgba(255, 255, 255, 0.03); display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 10; }
+        .admin-brand { padding: 30px 24px; font-family: 'Playfair Display', serif; font-size: 1.2rem; letter-spacing: 3px; color: #ffffff; border-bottom: 1px solid rgba(255, 255, 255, 0.02); }
+        .admin-brand span { color: #e5a93c; }
+        .nav-group { list-style: none; padding: 20px 12px; display: flex; flex-direction: column; gap: 6px; }
+        .nav-item { display: flex; align-items: center; padding: 14px 16px; color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; border-radius: 4px; transition: all 0.3s; }
+        .nav-item:hover, .nav-item.active { color: #e5a93c; background: rgba(229, 169, 60, 0.04); font-weight: 500; }
+        main { margin-left: 260px; flex-grow: 1; padding: 40px; background: linear-gradient(180deg, #080808 0%, #050505 100%); }
+        .view-panel { display: none; animation: paneFade 0.6s ease forwards; }
+        .view-panel.active { display: block; }
+        .view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        
+        .enterprise-tag { font-size: 0.65rem; color: #e5a93c; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; font-weight: 600; }
+        .view-title h2 { font-size: 1.8rem; color: #ffffff; font-family: 'Playfair Display', serif; font-weight: 500; margin-bottom: 4px; }
+        .view-title p { font-size: 0.85rem; color: rgba(255,255,255,0.4); }
+        
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        .metric-card { background: #0d0d0d; border: 1px solid rgba(255, 255, 255, 0.02); padding: 24px; }
+        .metric-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.4); margin-bottom: 12px; }
+        .metric-value { font-family: 'Playfair Display', serif; font-size: 2rem; color: #ffffff; }
+        
+        .action-btn { background: #e5a93c; color: #050505; border: none; padding: 12px 24px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; width: 100%; text-align: center; }
+        .action-btn:hover { background: #f0be5e; box-shadow: 0 4px 20px rgba(229, 169, 60, 0.2); }
+        .secondary-btn { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: white; padding: 10px 20px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; }
+        .secondary-btn:hover { border-color: #e5a93c; color: #e5a93c; }
+        
+        .table-container { background: #080808; width: 100%; overflow-x: auto; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+        th { background: #050505; padding: 16px 20px; text-transform: uppercase; letter-spacing: 1.5px; font-size: 0.7rem; color: rgba(255,255,255,0.4); border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-weight: 500; }
+        td { padding: 24px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); color: rgba(255,255,255,0.8); vertical-align: top; }
+        
+        .img-preview-thumb { width: 45px; height: 45px; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .fallback-thumb { width: 45px; height: 45px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: rgba(255,255,255,0.3); border: 1px dashed rgba(255,255,255,0.1); }
+        
+        .badge { display: inline-block; padding: 6px 12px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; border-radius: 1px; font-weight: 500; }
+        .badge-instock { background: rgba(76, 175, 80, 0.08); color: #4CAF50; border: 1px solid rgba(76,175,80,0.15); }
+        .badge-lowstock { background: rgba(244, 67, 54, 0.08); color: #f44336; border: 1px solid rgba(244,67,54,0.15); }
+        .badge-pending { background: rgba(229, 169, 60, 0.08); color: #e5a93c; border: 1px solid rgba(229, 169, 60, 0.15); }
+        .badge-fulfilled { background: rgba(76, 175, 80, 0.08); color: #4CAF50; border: 1px solid rgba(76,175,80,0.15); }
+        
+        .logistic-select, .logistic-input { width: 100%; background: #050505; border: 1px solid rgba(255,255,255,0.15); padding: 10px 12px; color: #fff; font-family: inherit; font-size: 0.8rem; margin-bottom: 8px; border-radius: 0; outline: none; }
+        .logistic-select:focus, .logistic-input:focus { border-color: #e5a93c; }
+        
+        .dispatched-box { border: 1px dashed rgba(255,255,255,0.08); padding: 14px; background: #090909; font-size: 0.8rem; line-height: 1.5; }
+        
+        .address-module { background: #090909; border: 1px solid rgba(255,255,255,0.02); padding: 14px; margin-top: 12px; font-size: 0.78rem; line-height: 1.5; border-radius: 2px; max-width: 280px; }
+        .address-line { margin-bottom: 3px; color: #ffffff; display: flex; }
+        .address-line span { color: rgba(255,255,255,0.35); display: inline-block; width: 85px; font-weight: 400; flex-shrink: 0; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-surface { background: #0d0d0d; border: 1px solid rgba(229, 169, 60, 0.15); width: 100%; max-width: 500px; padding: 40px; }
+        .form-field { margin-bottom: 20px; }
+        .form-field label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
+        .form-field input { width: 100%; background: #141414; border: 1px solid rgba(255,255,255,0.05); padding: 14px; color: white; font-family: inherit; font-size: 0.85rem; }
+        
+        .ordered-items-list { font-size: 0.8rem; color: rgba(255,255,255,0.6); list-style: square; padding-left: 15px; }
+        .ordered-items-list li { margin-bottom: 4px; }
+        @keyframes paneFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div class="admin-brand">AURA <span>&</span> ASH</div>
+        <ul class="nav-group">
+            <li class="nav-item active" onclick="switchView('dashboard', this)">Overview</li>
+            <li class="nav-item" onclick="switchView('catalog', this)">Catalog Vault</li>
+            <li class="nav-item" onclick="switchView('orders', this)">Orders Ledger</li>
+        </ul>
+    </aside>
+
+    <main>
+        <!-- Dashboard Overview Matrix -->
+        <section id="view-dashboard" class="view-panel active">
+            <div class="view-header">
+                <div class="view-title">
+                    <div class="enterprise-tag">Enterprise Hub</div>
+                    <h2>Performance Ledger</h2>
+                    <p>Real-time system transaction configurations</p>
+                </div>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card"><div class="metric-label">Processed Volume Revenue</div><div class="metric-value" id="dash-revenue-count">₹0.00</div></div>
+                <div class="metric-card"><div class="metric-label">Vault Products</div><div class="metric-value" id="dash-catalog-count">0</div></div>
+                <div class="metric-card"><div class="metric-label">Pending Orders Queue</div><div class="metric-value" id="dash-orders-count">0</div></div>
+            </div>
+        </section>
+
+        <!-- Product Catalog Management -->
+        <section id="view-catalog" class="view-panel">
+            <div class="view-header">
+                <div class="view-title">
+                    <div class="enterprise-tag">Inventory Engine</div>
+                    <h2>Catalog Vault</h2>
+                    <p>Formulate or modify architectural inventory assets</p>
+                </div>
+                <button class="action-btn" style="width: auto;" onclick="openCreateModal()">Formulate New Vessel</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Visual</th><th>Identity Name</th><th>Scent Core</th><th>Cost</th><th>Stock Balance</th><th>Status Matrix</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="catalog-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Order Portal View -->
+        <section id="view-orders" class="view-panel">
+            <div class="view-header">
+                <div class="view-title">
+                    <div class="enterprise-tag">Enterprise Hub</div>
+                    <h2>Aura & Ash Fulfillment Portal</h2>
+                </div>
+                <button class="secondary-btn" onclick="reloadEcosystemDatabases()">Sync Real-Time Logs</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 13%">Order Matrix ID</th>
+                            <th style="width: 32%">Customer Info & Full Address Details</th>
+                            <th style="width: 15%">Purchased Payloads</th>
+                            <th style="width: 10%">Grand Total</th>
+                            <th style="width: 12%">Fulfillment Status</th>
+                            <th style="width: 18%">Logistics Carrier Options</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Catalog Vessel Formulation Modal -->
+    <div class="modal-overlay" id="catalogModal">
+        <div class="modal-surface">
+            <div class="modal-header"><h3 id="modalTitle" style="font-family:'Playfair Display',serif; color:#fff; font-size:1.3rem; margin-bottom:20px;">Vessel Formulation</h3></div>
+            <form id="newProductForm" onsubmit="handleFormSubmission(event)">
+                <div class="form-field"><label>Product Photography</label><input type="file" id="prodImage" accept="image/*"></div>
+                <div class="form-field"><label>Olfactory Identity Name</label><input type="text" id="prodName" required></div>
+                <div class="form-field"><label>Scent Core Elements</label><input type="text" id="prodNotes" required></div>
+                <div class="form-field"><label>Valuation Cost (₹)</label><input type="number" id="prodPrice" step="0.01" required></div>
+                <div class="form-field"><label>Inventory Count</label><input type="number" id="prodStock" required></div>
+                <div class="form-actions" style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" class="secondary-btn" onclick="closeModal()" style="border:none;">Discard</button>
+                    <button type="submit" class="action-btn" id="submitBtn" style="width:auto;">Save Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let productDatabase = JSON.parse(localStorage.getItem('aura_ash_storage')) || [];
+        let ordersDatabase = JSON.parse(localStorage.getItem('aura_ash_orders')) || [];
+        let currentEditIndex = null;
+
+        // Populate Mock Database on initial boot
+        if (ordersDatabase.length === 0) {
+            ordersDatabase = [
+                {
+                    id: "AA-948201",
+                    date: "09/07/2026",
+                    time: "14:32:10",
+                    items: [{ name: "Ember & Oak", qty: 2 }, { name: "Velvet Smoke", qty: 1 }],
+                    total: "6499",
+                    status: "Pending",
+                    customer: {
+                        name: "Arla Thorne",
+                        mobile: "5550192834",
+                        email: "aria.thorne@luxevillas.com",
+                        address: "Apt 4B, Burlington Heights, North Winooski Ave",
+                        city: "Burlington",
+                        state: "Vermont",
+                        pincode: "05401"
+                    },
+                    shipping: { carrier: "", tracking: "" }
+                },
+                {
+                    id: "AA-204918",
+                    date: "10/07/2026",
+                    time: "09:15:44",
+                    items: [{ name: "Midnight Bloom", qty: 1 }],
+                    total: "2250",
+                    status: "Dispatched",
+                    customer: {
+                        name: "Julian Vance",
+                        mobile: "4158830192",
+                        email: "vance.j@creativestudio.io",
+                        address: "842 Mission Street Floor 3, SoMa District",
+                        city: "San Francisco",
+                        state: "California",
+                        pincode: "94103"
+                    },
+                    shipping: { carrier: "Blue Dart Express", tracking: "AWB-774920194" }
+                }
+            ];
+            localStorage.setItem('aura_ash_orders', JSON.stringify(ordersDatabase));
+        }
+
+        function switchView(viewId, element) {
+            document.querySelectorAll('.view-panel').forEach(view => view.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(`view-${viewId}`).classList.add('active');
+            element.classList.add('active');
+            if(viewId === 'orders' || viewId === 'dashboard') reloadEcosystemDatabases();
+        }
+
+        function openCreateModal() {
+            currentEditIndex = null;
+            document.getElementById('newProductForm').reset();
+            document.getElementById('modalTitle').innerText = "Vessel Formulation";
+            document.getElementById('catalogModal').classList.add('active');
+        }
+
+        function openEditModal(index) {
+            currentEditIndex = index;
+            const item = productDatabase[index];
+            document.getElementById('prodName').value = item.name;
+            document.getElementById('prodNotes').value = item.notes;
+            document.getElementById('prodPrice').value = item.price;
+            document.getElementById('prodStock').value = item.stock;
+            document.getElementById('prodImage').value = "";
+            document.getElementById('modalTitle').innerText = "Modify Vessel Architecture";
+            document.getElementById('catalogModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('catalogModal').classList.remove('active');
+        }
+
+        function reloadEcosystemDatabases() {
+            productDatabase = JSON.parse(localStorage.getItem('aura_ash_storage')) || [];
+            ordersDatabase = JSON.parse(localStorage.getItem('aura_ash_orders')) || [];
+            renderCatalog();
+            renderOrdersLedger();
+            calculateTelemetryMetrics();
+        }
+
+        function calculateTelemetryMetrics() {
+            document.getElementById('dash-catalog-count').innerText = productDatabase.length;
+            const pendingOrders = ordersDatabase.filter(o => o.status !== "Dispatched" && o.status !== "Processed Order").length;
+            document.getElementById('dash-orders-count').innerText = pendingOrders;
+            
+            const grossRevenue = ordersDatabase.reduce((total, order) => {
+                let cleanValue = order.total ? order.total.toString().replace(/,/g, '') : "0";
+                return total + parseFloat(cleanValue || 0);
+            }, 0);
+            document.getElementById('dash-revenue-count').innerText = `\u20B9${grossRevenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        }
+
+        function renderCatalog() {
+            const tableBody = document.getElementById('catalog-table-body');
+            tableBody.innerHTML = "";
+            productDatabase.forEach((product, index) => {
+                const tr = document.createElement('tr');
+                const imageHTML = product.imageSrc ? `<img src="${product.imageSrc}" class="img-preview-thumb">` : `<div class="fallback-thumb">No Image</div>`;
+                const badgeClass = product.stock < 15 ? 'badge-lowstock' : 'badge-instock';
+                
+                tr.innerHTML = `
+                    <td>${imageHTML}</td>
+                    <td style="color:#fff; font-weight:500;">${product.name}</td>
+                    <td>${product.notes}</td>
+                    <td>\u20B9${parseFloat(product.price).toFixed(2)}</td>
+                    <td>${product.stock} units</td>
+                    <td><span class="badge ${badgeClass}">${product.stock < 15 ? 'Low Balance' : 'Stable'}</span></td>
+                    <td><button class="secondary-btn" onclick="openEditModal(${index})">Edit Assets</button></td>
+                `;
+                tableBody.appendChild(tr);
+            });
+            localStorage.setItem('aura_ash_storage', JSON.stringify(productDatabase));
+        }
+
+        function renderOrdersLedger() {
+            const tableBody = document.getElementById('orders-table-body');
+            tableBody.innerHTML = "";
+
+            if(ordersDatabase.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:rgba(255,255,255,0.25); padding: 50px 0;">No purchase orders received in active buffer queue.</td></tr>`;
+                return;
+            }
+
+            ordersDatabase.forEach((order, index) => {
+                const tr = document.createElement('tr');
+                
+                // Column 1: Order Matrix ID
+                const idCellHTML = `
+                    <div style="font-weight:600; color: #e5a93c; font-size: 0.95rem; margin-bottom: 4px; letter-spacing: 0.5px;">${order.id}</div>
+                    <div style="font-size: 0.72rem; color: rgba(255,255,255,0.35); line-height: 1.3;">${order.date},<br>${order.time || '12:00:00'}</div>
+                `;
+
+                // Column 2: Multi-Schema Customer Address Parsing (Handles storefront output fields smoothly)
+                const cust = order.customer || {};
+                const contactNumber = cust.mobile || cust.phone || 'N/A';
+                
+                // Construct standard flat/street block if split, otherwise parse base unified address field
+                let completeStreetLayout = '';
+                if (cust.flat || cust.street) {
+                    completeStreetLayout = `
+                        <div class="address-line"><span>Flat/House:</span>${cust.flat || 'N/A'}</div>
+                        <div class="address-line"><span>Area/Street:</span>${cust.street || 'N/A'}</div>
+                    `;
+                } else {
+                    completeStreetLayout = `<div class="address-line"><span>Street Adr:</span>${cust.address || 'N/A'}</div>`;
+                }
+
+                const customerCellHTML = `
+                    <div style="font-size: 0.7rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">Customer Name</div>
+                    <div style="color: #ffffff; font-weight: 500; font-size: 0.95rem; margin-bottom: 8px;">${cust.name || 'N/A'}</div>
+                    
+                    <div style="font-size: 0.7rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Contact Metrics</div>
+                    <div style="font-size: 0.8rem; color: #e5a93c; display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
+                        <span>📞</span> ${contactNumber}
+                    </div>
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 6px;">
+                        <span>✉</span> ${cust.email || 'N/A'}
+                    </div>
+                    
+                    <div class="address-module">
+                        <div style="font-size: 0.65rem; color: #e5a93c; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 600;">Delivery Address Module</div>
+                        ${completeStreetLayout}
+                        <div class="address-line"><span>City/Town:</span>${cust.city || 'N/A'}</div>
+                        <div class="address-line"><span>State Region:</span>${cust.state || 'N/A'}</div>
+                        <div class="address-line"><span>Postal Code:</span><strong>${cust.pincode || 'N/A'}</strong></div>
+                    </div>
+                `;
+
+                // Column 3: Purchased payloads
+                let itemsListHTML = `<ul class="ordered-items-list">`;
+                order.items.forEach(i => {
+                    itemsListHTML += `<li>${i.name} <span style="color: rgba(255,255,255,0.4);">[x${i.qty}]</span></li>`;
+                });
+                itemsListHTML += `</ul>`;
+
+                // Column 4: Total value
+                const dynamicPrice = order.total ? parseFloat(order.total.toString().replace(/,/g, '')) : 0;
+                const totalCellHTML = `<span style="font-weight: 600; color: #fff; font-size: 0.95rem;">\u20B9${dynamicPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>`;
+
+                // Column 5: Status badge selector
+                const checkDispatched = (order.status === "Dispatched");
+                const badgeStyle = checkDispatched ? "background: rgba(76,175,80,0.06); color: #4CAF50; border: 1px solid rgba(76,175,80,0.15);" : "background: rgba(229,169,60,0.06); color: #e5a93c; border: 1px solid rgba(229,169,60,0.15);";
+                const badgeLabel = checkDispatched ? "DISPATCHED" : "PENDING SHIPMENT";
+                const statusCellHTML = `<span class="badge" style="${badgeStyle}">${badgeLabel}</span>`;
+
+                // Column 6: Logistics controls
+                let logisticsCellHTML = "";
+                if (!checkDispatched) {
+                    const trackingPlaceholder = "AWB-" + Math.floor(100000000 + Math.random() * 900000000);
+                    logisticsCellHTML = `
+                        <select id="inline-carrier-${index}" class="logistic-select">
+                            <option value="Blue Dart Express" selected>Blue Dart Express</option>
+                            <option value="Delhivery">Delhivery</option>
+                            <option value="DTDC Express">DTDC Express</option>
+                            <option value="DHL India">DHL India</option>
+                        </select>
+                        <input type="text" id="inline-tracking-${index}" class="logistic-input" placeholder="Tracking ID / AWB" value="${trackingPlaceholder}">
+                        <button class="action-btn" style="padding: 10px; font-size: 0.7rem; font-weight:700;" onclick="confirmInlineDispatch(${index})">Confirm Dispatch</button>
+                    `;
+                } else {
+                    logisticsCellHTML = `
+                        <div class="dispatched-box">
+                            <span style="color: rgba(255,255,255,0.35); font-size: 0.72rem; text-transform: uppercase;">Transporter:</span> <strong style="color: #fff;">${order.shipping?.carrier || 'Blue Dart Express'}</strong><br>
+                            <span style="color: rgba(255,255,255,0.35); font-size: 0.72rem; text-transform: uppercase;">Waybill ID:</span> <strong style="color: #e5a93c; font-family: monospace;">${order.shipping?.tracking || 'N/A'}</strong>
+                        </div>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td>${idCellHTML}</td>
+                    <td>${customerCellHTML}</td>
+                    <td>${itemsListHTML}</td>
+                    <td>${totalCellHTML}</td>
+                    <td>${statusCellHTML}</td>
+                    <td>${logisticsCellHTML}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+            localStorage.setItem('aura_ash_orders', JSON.stringify(ordersDatabase));
+        }
+
+        function confirmInlineDispatch(index) {
+            const carrierElement = document.getElementById(`inline-carrier-${index}`);
+            const trackingElement = document.getElementById(`inline-tracking-${index}`);
+            
+            if (!carrierElement || !trackingElement) return;
+
+            const selectedCarrier = carrierElement.value;
+            const trackingId = trackingElement.value.trim();
+
+            if (!trackingId) {
+                alert("Logistics constraint exception: Tracking ID validation entry string required.");
+                return;
+            }
+
+            ordersDatabase[index].shipping = { carrier: selectedCarrier, tracking: trackingId };
+            ordersDatabase[index].status = "Dispatched";
+            
+            localStorage.setItem('aura_ash_orders', JSON.stringify(ordersDatabase));
+            reloadEcosystemDatabases();
+        }
+
+        function convertImageToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function handleFormSubmission(event) {
+            event.preventDefault();
+            const imageFile = document.getElementById('prodImage').files[0];
+            const name = document.getElementById('prodName').value;
+            const notes = document.getElementById('prodNotes').value;
+            const price = parseFloat(document.getElementById('prodPrice').value).toFixed(2);
+            const stock = parseInt(document.getElementById('prodStock').value);
+
+            let imageSrc = "";
+
+            if (currentEditIndex !== null) {
+                imageSrc = imageFile ? await convertImageToBase64(imageFile) : productDatabase[currentEditIndex].imageSrc;
+                productDatabase[currentEditIndex] = { imageSrc, name, notes, price, stock };
+            } else {
+                if (imageFile) imageSrc = await convertImageToBase64(imageFile);
+                productDatabase.push({ imageSrc, name, notes, price, stock });
+            }
+
+            localStorage.setItem('aura_ash_storage', JSON.stringify(productDatabase));
+            reloadEcosystemDatabases();
+            closeModal();
+        }
+
+        reloadEcosystemDatabases();
+    </script>
+</body>
+</html>
